@@ -19,7 +19,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { MessageSquare, Plus, Trash2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Eye, MessageSquare, Plus, Send, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 interface Contact {
@@ -29,9 +30,13 @@ interface Contact {
 }
 
 function HomePage() {
-  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([
+    { id: "1", name: "Abhay Pratap Singh", phone: "+916387661992" },
+  ]);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [message, setMessage] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
   const { setToastMessage } = useToastContext();
 
   const validatePhoneNumber = (phone: string) => {
@@ -84,13 +89,28 @@ function HomePage() {
     }
   };
 
+  const getPreviewMessage = (contactName: string) => {
+    return message.replace(/\{name\}/g, contactName);
+  };
+
+  const getCharacterCount = () => {
+    return message.length;
+  };
+
+  const isMessageValid = () => {
+    return message.trim().length > 0 && message.length <= 4096;
+  };
+
   return (
     <div className="min-h-screen p-4">
       <div className="max-w-4xl mx-auto space-y-6">
-        <p className="text-muted-foreground text-center">
-          Manage your contacts and send personalized messages to everyone at
-          once
-        </p>
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold">WhatsApp Message Broadcaster</h1>
+          <p className="text-muted-foreground">
+            Manage your contacts and send personalized messages to everyone at
+            once
+          </p>
+        </div>
 
         <Card>
           <CardHeader>
@@ -134,7 +154,91 @@ function HomePage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Contact List ({contacts.length})</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Compose Message
+            </CardTitle>
+            <CardDescription>
+              Write your message with {"{name}"} to personalize it for each
+              contact
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="message">Message</Label>
+              <Textarea
+                id="message"
+                placeholder="Hi {name}, this is a personalized message for you!"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={4}
+                className="resize-none"
+              />
+              <div className="flex justify-between items-center text-sm text-muted-foreground">
+                <span>Use {"{name}"} to insert contact names</span>
+                <span
+                  className={
+                    getCharacterCount() > 4096 ? "text-destructive" : ""
+                  }
+                >
+                  {getCharacterCount()}/4096 characters
+                </span>
+              </div>
+            </div>
+
+            {message.trim() && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPreview(!showPreview)}
+                  className="flex items-center gap-2"
+                >
+                  <Eye className="h-4 w-4" />
+                  {showPreview ? "Hide Preview" : "Show Preview"}
+                </Button>
+
+                {contacts.length > 0 && isMessageValid() && (
+                  <Button className="flex items-center gap-2">
+                    <Send className="h-4 w-4" />
+                    Send to All ({contacts.length})
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {showPreview && message.trim() && contacts.length > 0 && (
+              <Card className="bg-muted/50">
+                <CardHeader>
+                  <CardTitle className="text-sm">Message Preview</CardTitle>
+                  <CardDescription className="text-xs">
+                    How your message will look for each contact
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {contacts.slice(0, 3).map((contact) => (
+                    <div key={contact.id} className="space-y-1">
+                      <div className="text-xs font-medium text-muted-foreground">
+                        To: {contact.name} ({contact.phone})
+                      </div>
+                      <div className="p-3 bg-background rounded-md border text-sm">
+                        {getPreviewMessage(contact.name)}
+                      </div>
+                    </div>
+                  ))}
+                  {contacts.length > 3 && (
+                    <div className="text-xs text-muted-foreground text-center">
+                      ... and {contacts.length - 3} more contacts
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Contact List </CardTitle>
             <CardDescription>
               {contacts.length === 0
                 ? "No contacts added yet. Add your first contact above."
@@ -187,19 +291,6 @@ function HomePage() {
             )}
           </CardContent>
         </Card>
-
-        {contacts.length > 0 && (
-          <Card className="border-dashed">
-            <CardContent className="pt-6">
-              <div className="text-center space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  🎉 Great! You have {contacts.length} contact
-                  {contacts.length !== 1 ? "s" : ""} ready.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );
