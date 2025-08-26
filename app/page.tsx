@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { sendWhatsAppMessage } from "@/lib/actions";
 import { Eye, MessageSquare, Plus, Send, Trash2 } from "lucide-react";
 import { useState } from "react";
 
@@ -27,21 +28,24 @@ interface Contact {
   id: string;
   name: string;
   phone: string;
+  status?: "pending" | "sending" | "sent" | "failed";
 }
 
 function HomePage() {
   const [contacts, setContacts] = useState<Contact[]>([
-    { id: "1", name: "Abhay Pratap Singh", phone: "+916387661992" },
+    { id: "1", name: "Abhay Pratap Singh", phone: "916387661992" },
+    { id: "2", name: "Cool", phone: "919369774914" },
   ]);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
   const [showPreview, setShowPreview] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const { setToastMessage } = useToastContext();
 
   const validatePhoneNumber = (phone: string) => {
     const phoneRegex = /^[+]?[1-9][\d]{7,14}$/;
-    return phoneRegex.test(phone.replace(/[\s\-$$$$]/g, ""));
+    return phoneRegex.test(phone.replace(/[\s\-()]/g, ""));
   };
 
   const addContact = () => {
@@ -99,6 +103,83 @@ function HomePage() {
 
   const isMessageValid = () => {
     return message.trim().length > 0 && message.length <= 4096;
+  };
+
+  const sendToAll = async () => {
+    if (!isMessageValid() || contacts.length === 0) {
+      setToastMessage("Please ensure you have contacts and a valid message");
+      return;
+    }
+
+    setIsSending(true);
+
+    setContacts((prev) =>
+      prev.map((contact) => ({ ...contact, status: "pending" as const }))
+    );
+
+    let successCount = 0;
+    let failureCount = 0;
+
+    for (const contact of contacts) {
+      try {
+        setContacts((prev) =>
+          prev.map((c) =>
+            c.id === contact.id ? { ...c, status: "sending" as const } : c
+          )
+        );
+
+        const personalizedMessage = getPreviewMessage(contact.name);
+
+        const result = await sendWhatsAppMessage(
+          contact.phone,
+          personalizedMessage
+        );
+
+        if (result.success) {
+          setContacts((prev) =>
+            prev.map((c) =>
+              c.id === contact.id ? { ...c, status: "sent" as const } : c
+            )
+          );
+          successCount++;
+        }
+        if (result.error) {
+          setToastMessage(result.error);
+        }
+      } catch (error) {
+        setContacts((prev) =>
+          prev.map((c) =>
+            c.id === contact.id ? { ...c, status: "failed" as const } : c
+          )
+        );
+        failureCount++;
+      }
+
+      if (contact !== contacts[contacts.length - 1]) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+
+    setIsSending(false);
+
+    setToastMessage(
+      `Broadcast complete! ${successCount} sent successfully, ${failureCount} failed.`
+    );
+  };
+
+  const getStatusIcon = (status?: Contact["status"]) => {
+    switch (status) {
+      case "sending":
+        return (
+          <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
+        );
+      case "sent":
+        return <div className="w-2 h-2 bg-green-500 rounded-full" />;
+      case "failed":
+        return <div className="w-2 h-2 bg-red-500 rounded-full" />;
+      default:
+        return <div className="w-2 h-2 bg-gray-300 rounded-full" />;
+    }
   };
 
   return (
@@ -198,9 +279,17 @@ function HomePage() {
                 </Button>
 
                 {contacts.length > 0 && isMessageValid() && (
-                  <Button className="flex items-center gap-2">
+                  <Button
+                    onClick={sendToAll}
+                    disabled={isSending}
+                    className="flex items-center gap-2"
+                  >
                     <Send className="h-4 w-4" />
-                    Send to All ({contacts.length})
+                    {isSending
+                      ? `Sending... (${
+                          contacts.filter((c) => c.status === "sent").length
+                        }/${contacts.length})`
+                      : `Send to All (${contacts.length})`}
                   </Button>
                 )}
               </div>
@@ -261,6 +350,7 @@ function HomePage() {
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Phone Number</TableHead>
+                      <TableHead className="w-[100px]">Status</TableHead>
                       <TableHead className="w-[100px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -274,11 +364,20 @@ function HomePage() {
                           {contact.phone}
                         </TableCell>
                         <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(contact.status)}
+                            <span className="text-xs capitalize">
+                              {contact.status || "ready"}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => deleteContact(contact.id)}
                             className="text-destructive hover:text-destructive"
+                            disabled={isSending}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
