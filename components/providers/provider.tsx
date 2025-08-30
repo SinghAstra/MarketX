@@ -43,7 +43,7 @@ const LoadingFallback = () => {
 const Providers = ({ children }: ProviderProps) => {
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <ToastProvider>{children}</ToastProvider>
+        <ToastProvider>{children}</ToastProvider>
     </Suspense>
   );
 };
