@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
-if (!VERIFY_TOKEN) {
-  throw new Error("VERIFY_TOKEN for whatsapp webhook missing.");
+const META_WEBHOOK_VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN;
+if (!META_WEBHOOK_VERIFY_TOKEN) {
+  throw new Error("META_WEBHOOK_VERIFY_TOKEN for whatsapp webhook missing.");
 }
 
 export async function GET(request: NextRequest) {
@@ -13,9 +13,9 @@ export async function GET(request: NextRequest) {
   console.log("mode is ", mode);
   console.log("token is ", token);
   console.log("challenge is ", challenge);
-  console.log("VERIFY_TOKEN is ", VERIFY_TOKEN);
+  console.log("META_WEBHOOK_VERIFY_TOKEN is ", META_WEBHOOK_VERIFY_TOKEN);
 
-  if (mode === "subscribe" && token === VERIFY_TOKEN) {
+  if (mode === "subscribe" && token === META_WEBHOOK_VERIFY_TOKEN) {
     console.log("Webhook successfully verified!");
     return NextResponse.json(challenge, { status: 200 });
   } else {
