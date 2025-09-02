@@ -1,25 +1,47 @@
-import { NextRequest, NextResponse } from "next/server";
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const mode = url.searchParams.get("hub.mode");
+  const token = url.searchParams.get("hub.verify_token");
+  const challenge = url.searchParams.get("hub.challenge");
+  const verifyToken = process.env.META_WEBHOOK_VERIFY_TOKEN;
 
-const META_WEBHOOK_VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN;
-if (!META_WEBHOOK_VERIFY_TOKEN) {
-  throw new Error("META_WEBHOOK_VERIFY_TOKEN for whatsapp webhook missing.");
-}
-
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const mode = searchParams.get("hub.mode");
-  const token = searchParams.get("hub.verify_token");
-  const challenge = searchParams.get("hub.challenge");
   console.log("mode is ", mode);
   console.log("token is ", token);
   console.log("challenge is ", challenge);
-  console.log("META_WEBHOOK_VERIFY_TOKEN is ", META_WEBHOOK_VERIFY_TOKEN);
+  console.log(
+    "META_WEBHOOK_VERIFY_TOKEN is ",
+    verifyToken ? "[present]" : "[missing]"
+  );
 
-  if (mode === "subscribe" && token === META_WEBHOOK_VERIFY_TOKEN) {
-    console.log("Webhook successfully verified!");
-    return NextResponse.json(challenge, { status: 200 });
-  } else {
-    console.log("Webhook verification failed. Invalid token or mode.");
-    return NextResponse.json("Verification failed", { status: 403 });
+  if (!verifyToken) {
+    return new Response(
+      "Server misconfigured: missing META_WEBHOOK_VERIFY_TOKEN",
+      { status: 500 }
+    );
+  }
+
+  if (mode === "subscribe" && token === verifyToken) {
+    console.log("Verified Successfully");
+    return new Response(challenge ?? "", {
+      status: 200,
+      headers: { "Content-Type": "text/plain" },
+    });
+  }
+
+  return new Response("Verification failed", { status: 403 });
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    console.log("WhatsApp Webhook Event:", JSON.stringify(body));
+    return new Response("EVENT_RECEIVED", { status: 200 });
+  } catch (error) {
+    console.log("WhatsApp Webhook Error parsing payload");
+    if (error instanceof Error) {
+      console.log("error.stack is ", error.stack);
+      console.log("error.message is ", error.message);
+    }
+    return new Response("Bad Request", { status: 400 });
   }
 }
