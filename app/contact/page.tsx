@@ -20,7 +20,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { sendWhatsAppMessage } from "@/lib/actions";
 import { Eye, MessageSquare, Plus, Send, Trash2 } from "lucide-react";
 import { useState } from "react";
 
@@ -117,48 +116,48 @@ function HomePage() {
       prev.map((contact) => ({ ...contact, status: "pending" as const }))
     );
 
-    let successCount = 0;
-    let failureCount = 0;
+    const successCount = 0;
+    const failureCount = 0;
 
-    for (const contact of contacts) {
-      try {
-        setContacts((prev) =>
-          prev.map((c) =>
-            c.id === contact.id ? { ...c, status: "sending" as const } : c
-          )
-        );
+    // for (const contact of contacts) {
+    //   try {
+    //     setContacts((prev) =>
+    //       prev.map((c) =>
+    //         c.id === contact.id ? { ...c, status: "sending" as const } : c
+    //       )
+    //     );
 
-        const personalizedMessage = getPreviewMessage(contact.name);
+    //     const personalizedMessage = getPreviewMessage(contact.name);
 
-        const result = await sendWhatsAppMessage(
-          contact.phone,
-          personalizedMessage
-        );
+    //     const result = await sendWhatsAppMessage(
+    //       contact.phone,
+    //       personalizedMessage
+    //     );
 
-        if (result.success) {
-          setContacts((prev) =>
-            prev.map((c) =>
-              c.id === contact.id ? { ...c, status: "sent" as const } : c
-            )
-          );
-          successCount++;
-        }
-        if (result.error) {
-          setToastMessage(result.error);
-        }
-      } catch (error) {
-        setContacts((prev) =>
-          prev.map((c) =>
-            c.id === contact.id ? { ...c, status: "failed" as const } : c
-          )
-        );
-        failureCount++;
-      }
+    //     if (result.success) {
+    //       setContacts((prev) =>
+    //         prev.map((c) =>
+    //           c.id === contact.id ? { ...c, status: "sent" as const } : c
+    //         )
+    //       );
+    //       successCount++;
+    //     }
+    //     if (result.error) {
+    //       setToastMessage(result.error);
+    //     }
+    //   } catch (error) {
+    //     setContacts((prev) =>
+    //       prev.map((c) =>
+    //         c.id === contact.id ? { ...c, status: "failed" as const } : c
+    //       )
+    //     );
+    //     failureCount++;
+    //   }
 
-      if (contact !== contacts[contacts.length - 1]) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
-    }
+    //   if (contact !== contacts[contacts.length - 1]) {
+    //     await new Promise((resolve) => setTimeout(resolve, 1000));
+    //   }
+    // }
 
     setIsSending(false);
 
