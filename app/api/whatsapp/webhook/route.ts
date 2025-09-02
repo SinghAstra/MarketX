@@ -10,6 +10,10 @@ export async function GET(request: NextRequest) {
   const mode = searchParams.get("hub.mode");
   const token = searchParams.get("hub.verify_token");
   const challenge = searchParams.get("hub.challenge");
+  console.log("mode is ", mode);
+  console.log("token is ", token);
+  console.log("challenge is ", challenge);
+  console.log("VERIFY_TOKEN is ", VERIFY_TOKEN);
 
   if (mode === "subscribe" && token === VERIFY_TOKEN) {
     console.log("Webhook successfully verified!");
