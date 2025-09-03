@@ -11,7 +11,7 @@ function App() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/whatsapp/embedded-signup", {
+      const response = await fetch("/api/whatsapp/auth/start", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -77,7 +77,7 @@ function App() {
             ></path>
           </svg>
         ) : (
-          "Apply for WhatsApp Business API"
+          "Connect Facebook"
         )}
       </Button>
     </div>
